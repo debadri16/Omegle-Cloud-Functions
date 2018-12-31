@@ -17,21 +17,56 @@ exports.countQueue = functions.database.ref('/queue').onWrite((change, context) 
     return null;
 });*/
 
+/*exports.sortQueue = functions.database.ref('/queue').onWrite((change, context) => {
+  
+  const membersRef = change.after.ref;
+  
+  return membersRef.orderByChild('timeStamp').once("value", function(snapshot) {
+    
+    snapshot.forEach(function(childSnapshot){
+
+      const childData = childSnapshot.val();
+      console.log("value",childData);
+
+    });
+  });
+});*/
+
+
 // Listens for new users added to queue
-exports.makeUppercase = functions.database.ref('/queue/{userId}')
+exports.operateQueue = functions.database.ref('/queue/{userId}')
     .onCreate((snapshot, context) => {
       // Grab the current value of what was written to the Realtime Database.
       
       const user_id = context.params.userId;
       const time_stamp = snapshot.val().timeStamp;
 
-      countQuery = snapshot.ref.parent.once("value").then(snap => {
+      countQuery = snapshot.ref.parent.orderByChild('timeStamp').limitToFirst(2).once("value").then(snap => {
 
         const count = snap.numChildren();
         console.log('counting', count);
+        
+        userArr = new Array(2);
+        iterator = 0;
+        if(count === 2){
+          //console.log("not 1",count);
 
-        const uppercase = time_stamp.toUpperCase();
-        insertQuery = admin.database().ref("/chat/"+user_id+"/time").set(uppercase);
+          snap.forEach(function(childSnapshot) {
+
+            userArr[iterator] = childSnapshot.key;
+            console.log("value",userArr[iterator]);
+
+            iterator += 1;
+            
+          });
+
+          insertQuery = admin.database().ref("/chat/"+userArr[iterator-1]+"/"+ userArr[iterator-2]+"/seen").set(time_stamp);
+          insertQuery2 = admin.database().ref("/chat/"+userArr[iterator-2]+"/"+ userArr[iterator-1]+"/seen").set(time_stamp);
+
+          deleteQuery = admin.database().ref("/queue/"+userArr[iterator-1]).remove();
+          deleteQuery2 = admin.database().ref("/queue/"+userArr[iterator-2]).remove();
+
+        }
 
         return null;
       });
