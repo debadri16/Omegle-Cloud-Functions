@@ -41,8 +41,10 @@ exports.operateQueue = functions.database.ref('/queue/{userId}')
       const user_id = context.params.userId;
       const time_stamp = snapshot.val().timeStamp;
 
+      //sort and count 
       countQuery = snapshot.ref.parent.orderByChild('timeStamp').limitToFirst(2).once("value").then(snap => {
 
+        //always <=2
         const count = snap.numChildren();
         console.log('counting', count);
         
@@ -51,6 +53,7 @@ exports.operateQueue = functions.database.ref('/queue/{userId}')
         if(count === 2){
           //console.log("not 1",count);
 
+          //getting first 2 children
           snap.forEach(function(childSnapshot) {
 
             userArr[iterator] = childSnapshot.key;
@@ -60,9 +63,11 @@ exports.operateQueue = functions.database.ref('/queue/{userId}')
             
           });
 
+          //session
           insertQuery = admin.database().ref("/chat/"+userArr[iterator-1]+"/"+ userArr[iterator-2]+"/seen").set(time_stamp);
           insertQuery2 = admin.database().ref("/chat/"+userArr[iterator-2]+"/"+ userArr[iterator-1]+"/seen").set(time_stamp);
 
+          //remove from queue
           deleteQuery = admin.database().ref("/queue/"+userArr[iterator-1]).remove();
           deleteQuery2 = admin.database().ref("/queue/"+userArr[iterator-2]).remove();
 
