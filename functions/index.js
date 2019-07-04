@@ -40,6 +40,7 @@ exports.operateQueue = functions.database.ref('/queue/{userId}')
       
       const user_id = context.params.userId;
       const time_stamp = snapshot.val().timeStamp;
+      console.log('uid',user_id);
 
       //sort and count 
       countQuery = snapshot.ref.parent.orderByChild('timeStamp').limitToFirst(2).once("value").then(snap => {
